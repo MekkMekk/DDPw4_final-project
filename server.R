@@ -1,30 +1,44 @@
 library(shiny)
 
-# Define UI for application that draws a histogram
-shinyUI(fluidPage(
+# Define server logic required
+shinyServer(function(input, output, session) {
   
-  # Application title
-  titlePanel("Chicken Feed"),
-  
-  # Sidebar with a slider input for the number of bins
-  sidebarLayout(
-    sidebarPanel(
-      h3("Introduction"),
-      p("This application will predict the size of your chicken if you will tell us the type of feed you use."),
-      br(), br(),
-      selectInput('feed','Type of feed used', choices=choices, selected=''),
-      submitButton('Submit')
-    ),
-    
-    # Show a plot of the generated distribution
-    mainPanel(
-      h3('Size Expectation'),
-      textOutput('text1'),
-      textOutput('text2'),
-      textOutput('text3'),
-      plotOutput('boxplot'),
-      h4('Reference'),
-      'McNeil, D. R. (1977)',  em('Interactive Data Analysis'), '. New York: Wiley.'
-    )
-  )
-))
+  output$text1 <- renderText({
+    if (input$feed == '')
+      'This application uses data from the Chicken Weights by Feed Type dataset. It provides information on the weight of chicken at six weeks using data on the type of feed they have been given. The results are based on a study to measure and compare the effectiveness of various feed supplements on the growth rate of chickens.'
+    else
+      paste('The chickens were fed with ', input$feed)
+  })
+  output$text2 <- renderText({
+    if (input$feed == '')
+      ''
+    else
+    {
+      data<-switch(input$feed, 
+                   'Casein'=chickwtsbyfeed$casein,
+                   'Horsebean'=chickwtsbyfeed$horsebean,
+                   'Linseed'=chickwtsbyfeed$linseed, 
+                   'Meatmeal'=chickwtsbyfeed$meatmeal,
+                   'Soybean'=chickwtsbyfeed$soybean,
+                   'Sunflower'=chickwtsbyfeed$sunflower)
+      paste('According to historical data in the dataset, the chicks will have average weight of ', round(mean(data$weight),3), 'grams, standard deviation ', round(sd(data$weight),3), 'grams at six weeks.')
+    }
+  })
+  output$text3 <- renderText({
+    if ( input$feed != '')
+      'A boxplot of chick weight using different feed is shown below'
+  })
+  output$boxplot <- renderPlot({
+    if (input$feed != '')
+    {
+      color<-switch(input$feed, 
+                    'Casein'=c('Red', 'Gray', 'Gray', 'Gray', 'Gray', 'Gray'),
+                    'Horsebean'=c('Gray', 'Red', 'Gray', 'Gray', 'Gray', 'Gray'),
+                    'Linseed'=c('Gray', 'Gray', 'Red', 'Gray', 'Gray', 'Gray'),
+                    'Meatmeal'=c('Gray', 'Gray', 'Gray', 'Red', 'Gray', 'Gray'),
+                    'Soybean'=c('Gray', 'Gray', 'Gray', 'Gray', 'Red', 'Gray'),
+                    'Sunflower'=c('Gray', 'Gray', 'Gray', 'Gray', 'Gray', 'Red'))
+      boxplot(chickwts$weight ~ chickwts$feed, col=color)
+    }
+  })
+})
